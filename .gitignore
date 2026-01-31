@@ -10,7 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python lib (ale nie browser-extension/src/lib)
+/lib/
 lib64/
 parts/
 sdist/
