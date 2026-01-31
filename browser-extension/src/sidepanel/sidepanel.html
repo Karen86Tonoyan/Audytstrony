@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Ollama Agent - Panel</title>
+  <link rel="stylesheet" href="../styles/sidepanel.css">
+</head>
+<body>
+  <div class="sidepanel">
+    <header>
+      <h1>🤖 Ollama Agent</h1>
+      <select id="mode">
+        <option value="chat">Chat</option>
+        <option value="code">Generuj kod</option>
+        <option value="app">Stwórz aplikację</option>
+      </select>
+    </header>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="app-builder" id="app-builder" style="display:none">
+      <input type="text" id="app-name" placeholder="Nazwa aplikacji">
+      <textarea id="app-desc" placeholder="Opis aplikacji"></textarea>
+      <select id="backend">
+        <option value="">-- Backend --</option>
+        <option value="node-express">Node.js + Express</option>
+        <option value="python-fastapi">Python + FastAPI</option>
+        <option value="python-flask">Python + Flask</option>
+      </select>
+      <select id="frontend">
+        <option value="">-- Frontend --</option>
+        <option value="react-vite">React + Vite</option>
+        <option value="vue-vite">Vue 3 + Vite</option>
+        <option value="vanilla">HTML/CSS/JS</option>
+      </select>
+      <button id="generate-app">Generuj aplikację</button>
+    </div>
+
+    <div class="input-area">
+      <textarea id="input" placeholder="Napisz wiadomość..."></textarea>
+      <button id="send">Wyślij</button>
+    </div>
+  </div>
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+{
+  "manifest_version": 3,
+  "name": "Ollama Agent - AI Assistant",
+  "version": "1.0.0",
+  "description": "Pełnoprawny agent AI oparty na Ollama - tworzy aplikacje, koduje backend i frontend, pomaga w pracy",
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "sidePanel",
+    "contextMenus",
+    "scripting",
+    "tabs",
+    "clipboardWrite",
+    "clipboardRead"
+  ],
+
+  "host_permissions": [
+    "http://localhost:11434/*",
+    "<all_urls>"
+  ],
+
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "public/icons/icon16.png",
+      "32": "public/icons/icon32.png",
+      "48": "public/icons/icon48.png",
+      "128": "public/icons/icon128.png"
+    },
+    "default_title": "Ollama Agent"
+  },
+
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
+  },
+
+  "background": {
+    "service_worker": "src/background/background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.js"],
+      "css": ["src/styles/content.css"],
+      "run_at": "document_end"
+    }
+  ],
+
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+O",
+        "mac": "Command+Shift+O"
+      },
+      "description": "Otwórz Ollama Agent"
+    },
+    "toggle_sidepanel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Przełącz panel boczny"
+    },
+    "quick_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "Szybka akcja na zaznaczonym tekście"
+    }
+  },
+
+  "icons": {
+    "16": "public/icons/icon16.png",
+    "32": "public/icons/icon32.png",
+    "48": "public/icons/icon48.png",
+    "128": "public/icons/icon128.png"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["public/*", "src/styles/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "options_page": "src/popup/options.html"
+}

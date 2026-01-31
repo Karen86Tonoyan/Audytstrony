@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ollama Agent</title>
+  <link rel="stylesheet" href="../styles/popup.css">
+</head>
+<body>
+  <div class="popup">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">🤖</span>
+        <h1>Ollama Agent</h1>
+      </div>
+      <div class="status" id="status">
+        <span class="status-dot"></span>
+        <span class="status-text">Łączenie...</span>
+      </div>
+    </header>
+
+    <div class="chat-container" id="chat">
+      <div class="welcome-message">
+        <p>Cześć! Jestem Ollama Agent.</p>
+        <p>Mogę tworzyć aplikacje, pisać kod, pomagać w programowaniu.</p>
+      </div>
+    </div>
+
+    <div class="input-container">
+      <textarea
+        id="input"
+        placeholder="Napisz wiadomość... (Enter = wyślij, Shift+Enter = nowa linia)"
+        rows="2"
+      ></textarea>
+      <button id="send" class="send-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="quick-actions">
+      <button class="action-btn" data-action="app">📱 Stwórz aplikację</button>
+      <button class="action-btn" data-action="explain">💡 Wyjaśnij kod</button>
+      <button class="action-btn" data-action="fix">🔧 Napraw błąd</button>
+    </div>
+
+    <footer class="footer">
+      <button id="sidepanel-btn" class="footer-btn">📌 Panel boczny</button>
+      <button id="settings-btn" class="footer-btn">⚙️ Ustawienia</button>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
