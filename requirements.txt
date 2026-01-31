@@ -1,0 +1,84 @@
+# Ollama Agent - Zależności
+# =========================
+
+# Core - Ollama API
+ollama>=0.1.0
+httpx>=0.25.0
+aiohttp>=3.9.0
+
+# Vision & Screen
+pillow>=10.0.0
+pytesseract>=0.3.10
+opencv-python>=4.8.0
+mss>=9.0.0
+pyautogui>=0.9.54
+
+# Voice & Audio
+speechrecognition>=3.10.0
+pyttsx3>=2.90
+pyaudio>=0.2.14
+sounddevice>=0.4.6
+soundfile>=0.12.1
+
+# Web Automation & Scraping
+selenium>=4.15.0
+playwright>=1.40.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+aiofiles>=23.2.0
+
+# Social Media APIs
+tweepy>=4.14.0  # Twitter/X
+facebook-sdk>=3.1.0
+instagrapi>=2.0.0  # Instagram
+python-telegram-bot>=20.0
+
+# Messaging
+whatsapp-web.py>=0.0.1
+
+# File Generation
+python-docx>=1.0.0  # Word
+openpyxl>=3.1.0  # Excel
+fpdf2>=2.7.0  # PDF
+python-pptx>=0.6.21  # PowerPoint
+jinja2>=3.1.0  # Templates
+markdown>=3.5.0
+pygments>=2.17.0  # Code highlighting
+
+# Automation & Scheduling
+schedule>=1.2.0
+apscheduler>=3.10.0
+watchdog>=3.0.0
+
+# System & Process
+psutil>=5.9.0
+pywin32>=306; sys_platform == 'win32'
+keyboard>=0.13.5
+mouse>=0.7.1
+
+# Database
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# Web Framework (for GUI)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+websockets>=12.0
+gradio>=4.0.0
+
+# CLI
+typer>=0.9.0
+rich>=13.7.0
+prompt-toolkit>=3.0.0
+
+# Security & Audit
+nmap>=0.7.1
+python-whois>=0.8.0
+dnspython>=2.4.0
+ssl-checker>=1.0.0
+
+# Utils
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+loguru>=0.7.0
+tqdm>=4.66.0
