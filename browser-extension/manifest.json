@@ -22,12 +22,6 @@
 
   "action": {
     "default_popup": "src/popup/popup.html",
-    "default_icon": {
-      "16": "public/icons/icon16.png",
-      "32": "public/icons/icon32.png",
-      "48": "public/icons/icon48.png",
-      "128": "public/icons/icon128.png"
-    },
     "default_title": "Ollama Agent"
   },
 
@@ -73,19 +67,10 @@
     }
   },
 
-  "icons": {
-    "16": "public/icons/icon16.png",
-    "32": "public/icons/icon32.png",
-    "48": "public/icons/icon48.png",
-    "128": "public/icons/icon128.png"
-  },
-
   "web_accessible_resources": [
     {
       "resources": ["public/*", "src/styles/*"],
       "matches": ["<all_urls>"]
     }
-  ],
-
-  "options_page": "src/popup/options.html"
+  ]
 }
