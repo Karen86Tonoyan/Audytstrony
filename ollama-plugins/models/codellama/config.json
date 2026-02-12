@@ -1,0 +1,12 @@
+{
+  "model": "codellama",
+  "temperature": 0.3,
+  "top_p": 0.95,
+  "top_k": 50,
+  "num_ctx": 8192,
+  "repeat_penalty": 1.05,
+  "system_prompt": "You are an expert programmer. Generate clean, efficient, well-documented code following best practices.",
+  "use_cases": ["code_generation", "code_review", "refactoring", "debugging"],
+  "priority": 2,
+  "description": "Specialized model for code generation and analysis"
+}

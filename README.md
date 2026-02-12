@@ -1,6 +1,9 @@
 # Ollama Agent - Pełnoprawny Agent AI
 
+**Human and Machine AI - Zintegrowany Projekt**
+
 Kompleksowy agent AI oparty na Ollama z pełnymi możliwościami automatyzacji komputera.
+Projekt łączy funkcjonalności repozytoriów **Audytstrony** i **Human-and-Machine-AI** w jeden spójny system.
 
 ## Możliwości
 
@@ -62,7 +65,40 @@ Kompleksowy agent AI oparty na Ollama z pełnymi możliwościami automatyzacji k
 - Workflows
 - Automatyczne wykonywanie
 
+### System Pluginów (ALFA)
+- Rozszerzalne pluginy AI
+- Integracje z zewnętrznymi serwisami
+- Niestandardowe narzędzia
+- API dla developerów
+
+### Rozszerzenia
+- VS Code Extension - AI w edytorze
+- Ollama Plugins - optymalizacje modeli
+- Szablony promptów
+- Inteligentne przełączanie modeli
+
 ## Instalacja
+
+### Metoda 1: Automatyczna instalacja (zalecane)
+
+```bash
+# Klonuj repozytorium
+git clone https://github.com/Karen86Tonoyan/Audytstrony.git
+cd Audytstrony
+
+# Uruchom skrypt instalacyjny
+chmod +x install.sh
+./install.sh
+```
+
+Skrypt automatycznie:
+- Zainstaluje Ollama i pobierze modele
+- Utworzy środowisko wirtualne
+- Zainstaluje wszystkie zależności
+- Skonfiguruje projekt
+- (Opcjonalnie) Zainstaluje rozszerzenie VS Code
+
+### Metoda 2: Manualna instalacja
 
 ```bash
 # Klonuj repozytorium
@@ -200,11 +236,30 @@ Audytstrony/
 │   │   └── programs.py     # Zarządzanie programami
 │   └── config/
 │       └── settings.py     # Konfiguracja
+├── ALFA-Plugins/           # System pluginów ALFA
+│   ├── code-assistant/     # Asystent programisty
+│   ├── web-scraper/        # Web scraping
+│   └── README.md
+├── ollama-plugins/         # Rozszerzenia Ollama
+│   ├── models/             # Konfiguracje modeli
+│   ├── templates/          # Szablony promptów
+│   ├── tools/              # Narzędzia (model switcher, etc.)
+│   └── README.md
+├── vscode-extension/       # Rozszerzenie VS Code
+│   ├── src/                # Kod TypeScript
+│   ├── package.json
+│   └── README.md
+├── docs/                   # Dokumentacja
+│   ├── README.md           # Główna dokumentacja
+│   ├── plugins.md          # Dokumentacja pluginów
+│   └── ...
 ├── data/                   # Dane robocze
 ├── tests/                  # Testy
 ├── main.py                 # Punkt wejścia
-├── requirements.txt        # Zależności
+├── requirements.txt        # Zależności Python
 ├── pyproject.toml          # Konfiguracja pakietu
+├── install.sh              # Skrypt instalacyjny
+├── DECLARATION_OF_SERVICE.md  # Deklaracja usługi
 └── .env.example            # Przykładowa konfiguracja
 ```
 
@@ -222,9 +277,76 @@ TELEGRAM_BOT_TOKEN=your_token
 TWITTER_API_KEY=your_key
 ```
 
+## Rozszerzona Funkcjonalność
+
+### 1. System Pluginów ALFA
+
+ALFA (Autonomous Learning and Function Augmentation) pozwala na tworzenie własnych pluginów:
+
+```python
+# Przykład użycia pluginu
+from agent import create_agent
+
+async def main():
+    agent = await create_agent()
+    
+    # Użyj pluginu code-assistant
+    code = await agent.plugins['code-assistant'].execute(
+        'generate_code',
+        {
+            'description': 'funkcja do sortowania listy liczb',
+            'language': 'python'
+        }
+    )
+    print(code)
+```
+
+Zobacz [ALFA-Plugins/README.md](ALFA-Plugins/README.md) dla szczegółów.
+
+### 2. Ollama Plugins
+
+Inteligentne przełączanie między modelami w zależności od zadania:
+
+```python
+from ollama_plugins.tools import ModelSwitcher
+
+switcher = ModelSwitcher()
+
+# Automatyczny wybór modelu
+model = switcher.select_for_task("code_generation")  # -> "codellama"
+model = switcher.select_for_task("conversation")     # -> "llama3.2"
+```
+
+Zobacz [ollama-plugins/README.md](ollama-plugins/README.md) dla szczegółów.
+
+### 3. VS Code Extension
+
+Integracja AI bezpośrednio w VS Code:
+
+- **Ctrl+Shift+A** - Otwórz chat z AI
+- **Ctrl+Shift+E** - Wyjaśnij wybrany kod
+- **Ctrl+Shift+R** - Zrefaktoruj kod
+- **Ctrl+Shift+T** - Wygeneruj testy
+- **Ctrl+Shift+D** - Wygeneruj dokumentację
+
+Zobacz [vscode-extension/README.md](vscode-extension/README.md) dla instalacji.
+
+## Dokumentacja
+
+Pełna dokumentacja dostępna w katalogu [docs/](docs/):
+
+- [Wprowadzenie](docs/README.md)
+- [System Pluginów](docs/plugins.md)
+- [Konfiguracja](docs/)
+- [API Reference](docs/)
+
 ## Licencja
 
 MIT
+
+## Deklaracja Usługi
+
+Zobacz [DECLARATION_OF_SERVICE.md](DECLARATION_OF_SERVICE.md) dla informacji o zakresie odpowiedzialności i zgodności z przepisami.
 
 ## Zakres Usług Bezpieczeństwa
 
