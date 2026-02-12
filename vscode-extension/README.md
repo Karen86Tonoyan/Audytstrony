@@ -100,7 +100,6 @@ Right-click in the editor and select:
 - `Ctrl+Shift+R`: Refactor selected code
 - `Ctrl+Shift+T`: Generate tests
 - `Ctrl+Shift+D`: Generate documentation
-- `Ctrl+Shift+B`: Find bugs
 
 ## Extension Settings
 
