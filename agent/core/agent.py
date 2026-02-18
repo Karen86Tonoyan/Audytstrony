@@ -22,6 +22,10 @@ from agent.modules.communication import CommunicationModule, get_communication
 from agent.modules.file_generator import FileGeneratorModule, get_file_generator
 from agent.modules.web_audit import WebAuditModule, get_web_audit
 from agent.modules.programs import ProgramsModule, get_programs
+from agent.modules.guardian import GuardianModule
+from agent.modules.memory import MemoryModule
+from agent.modules.web_scraper import WebScraperModule
+from agent.modules.human_behavior import HumanBehaviorEngine
 
 
 @dataclass
@@ -67,6 +71,10 @@ class OllamaAgent:
         self._web_audit: Optional[WebAuditModule] = None
         self._programs: Optional[ProgramsModule] = None
         self._scheduler: Optional[SchedulerModule] = None
+        self._guardian: Optional[GuardianModule] = None
+        self._memory: Optional[MemoryModule] = None
+        self._scraper: Optional[WebScraperModule] = None
+        self._behavior: Optional[HumanBehaviorEngine] = None
 
         # System prompt dla agenta
         self._system_prompt = """Jesteś zaawansowanym agentem AI o nazwie Ollama Agent.
@@ -117,6 +125,14 @@ Jeśli czegoś nie możesz zrobić, wyjaśnij dlaczego."""
             self._programs = get_programs()
             self._scheduler = get_scheduler()
 
+            # Nowe moduły - pamięć, zachowanie, scraper, guardian
+            self._memory = MemoryModule()
+            await self._memory.initialize()
+
+            self._behavior = HumanBehaviorEngine(self._memory)
+            self._scraper = WebScraperModule(self._memory)
+            self._guardian = GuardianModule(self._ollama)
+
             # Uruchom scheduler
             await self._scheduler.start()
 
@@ -153,13 +169,14 @@ Jeśli czegoś nie możesz zrobić, wyjaśnij dlaczego."""
 
     # ==================== Główne Interfejsy ====================
 
-    async def chat(self, message: str, images: List[Path] = None) -> str:
+    async def chat(self, message: str, images: List[Path] = None, user_id: str = "default") -> str:
         """
         Główna metoda rozmowy z agentem.
 
         Args:
             message: Wiadomość użytkownika
             images: Opcjonalne obrazy do analizy
+            user_id: ID użytkownika dla personalizacji
 
         Returns:
             Odpowiedź agenta
@@ -167,7 +184,23 @@ Jeśli czegoś nie możesz zrobić, wyjaśnij dlaczego."""
         if not self._initialized:
             await self.initialize()
 
-        # Zapisz w historii
+        # Sprawdź Guardian - bezpieczeństwo
+        allowed, reason = await self._guardian.check_action("chat", message, {"user_id": user_id})
+        if not allowed:
+            return f"🛡️ Guardian: {reason}"
+
+        # Zapamiętaj w Memory
+        await self._memory.remember_message(
+            session_id=self.context.session_id,
+            role="user",
+            content=message,
+            context={"user_id": user_id}
+        )
+
+        # HumanBehavior - emocje
+        self._behavior.remember_conversation_turn("user", message)
+
+        # Zapisz w historii lokalnej
         self.context.history.append({
             "role": "user",
             "content": message,
@@ -177,7 +210,17 @@ Jeśli czegoś nie możesz zrobić, wyjaśnij dlaczego."""
         # Analizuj intencję i wykonaj akcję
         response = await self._process_message(message, images)
 
-        # Zapisz odpowiedź
+        # Humanizuj odpowiedź
+        response = self._behavior.humanize_response(response)
+
+        # Zapisz odpowiedź w Memory
+        await self._memory.remember_message(
+            session_id=self.context.session_id,
+            role="assistant",
+            content=response
+        )
+
+        # Zapisz w historii lokalnej
         self.context.history.append({
             "role": "assistant",
             "content": response,
@@ -228,8 +271,32 @@ Jeśli czegoś nie możesz zrobić, wyjaśnij dlaczego."""
             if any(kw in message_lower for kw in ["zaplanuj", "przypomnij", "harmonogram", "codziennie", "co godzinę"]):
                 return await self._handle_schedule(message)
 
-            # Domyślnie: rozmowa z LLM
-            return await self._ollama.chat(message, images)
+            # Wyszukaj w internecie
+            if any(kw in message_lower for kw in ["wyszukaj", "znajdź w internecie", "szukaj", "google", "sprawdź online"]):
+                return await self._handle_web_search(message)
+
+            # Zbierz dane z URL
+            if any(kw in message_lower for kw in ["pobierz stronę", "scrapuj", "zbierz dane z"]):
+                return await self._handle_web_scrape(message)
+
+            # Przypomnij sobie / pamięć
+            if any(kw in message_lower for kw in ["pamiętasz", "przypomnij sobie", "co wiesz o", "wspomnienie"]):
+                return await self._handle_memory_recall(message)
+
+            # Naucz się
+            if any(kw in message_lower for kw in ["zapamiętaj", "naucz się", "zanotuj"]):
+                return await self._handle_learn(message)
+
+            # Domyślnie: rozmowa z LLM (z kontekstem z pamięci)
+            context = await self._memory.build_context("default", message)
+            enriched_prompt = f"""Kontekst użytkownika:
+- Nastrój bota: {context.get('mood', {})}
+- Relacja: {context.get('relationship', {})}
+- Preferencje: {context.get('preferences', [])}
+
+Pytanie: {message}"""
+
+            return await self._ollama.chat(enriched_prompt, images)
 
         except Exception as e:
             logger.error(f"Błąd przetwarzania: {e}")
@@ -419,6 +486,124 @@ Pełny raport zapisany w: {report_path}"""
 
         return "Podaj szczegóły harmonogramu (np. 'przypomnij codziennie o raporcie')"
 
+    async def _handle_web_search(self, message: str) -> str:
+        """Obsłuż wyszukiwanie w internecie."""
+        # Wyodrębnij zapytanie
+        query = message
+        for keyword in ["wyszukaj ", "znajdź ", "szukaj ", "google "]:
+            if keyword in message.lower():
+                query = message.lower().split(keyword, 1)[1]
+                break
+
+        results = await self._scraper.search_duckduckgo(query, num_results=5)
+
+        if not results:
+            return f"Nie znalazłem wyników dla: {query}"
+
+        response = f"Wyniki wyszukiwania dla '{query}':\n\n"
+        for i, r in enumerate(results, 1):
+            response += f"{i}. **{r.title}**\n   {r.url}\n   {r.snippet[:150]}...\n\n"
+
+        # Zapisz do pamięci
+        for r in results:
+            await self._memory.learn_fact(
+                category="web_search",
+                topic=query,
+                fact=f"{r.title}: {r.snippet}",
+                source=r.url,
+                confidence=0.6
+            )
+
+        return response
+
+    async def _handle_web_scrape(self, message: str) -> str:
+        """Obsłuż scrapowanie strony."""
+        # Znajdź URL
+        words = message.split()
+        url = None
+        for word in words:
+            if word.startswith("http"):
+                url = word
+                break
+            if "." in word and len(word) > 4:
+                url = f"https://{word}"
+                break
+
+        if not url:
+            return "Podaj URL strony do scrapowania, np. 'pobierz stronę https://example.com'"
+
+        result = await self._scraper.learn_from_url(url, category="scraped")
+
+        if result:
+            return f"""Zebrałem dane z {url}:
+
+**Tytuł:** {result['title']}
+
+**Podsumowanie:** {result['summary'][:500]}...
+
+**Słowa kluczowe:** {', '.join(result['keywords'][:10])}
+
+**Linki:** Znaleziono {result['links_found']} linków"""
+
+        return f"Nie udało się pobrać strony {url}"
+
+    async def _handle_memory_recall(self, message: str) -> str:
+        """Obsłuż przypominanie sobie."""
+        # Wyodrębnij temat
+        topic = message
+        for keyword in ["pamiętasz ", "co wiesz o ", "przypomnij sobie "]:
+            if keyword in message.lower():
+                topic = message.lower().split(keyword, 1)[1]
+                break
+
+        # Szukaj w wiedzy
+        knowledge = await self._memory.recall_knowledge(topic)
+        memories = await self._memory.search_memory(topic, limit=5)
+
+        response = f"Oto co pamiętam o '{topic}':\n\n"
+
+        if knowledge:
+            response += "**Wiedza:**\n"
+            for k in knowledge[:5]:
+                response += f"- {k['fact'][:200]}... (źródło: {k.get('source', 'rozmowa')})\n"
+
+        if memories:
+            response += "\n**Wspomnienia z rozmów:**\n"
+            for m in memories[:3]:
+                response += f"- [{m['role']}]: {m['content'][:100]}...\n"
+
+        if not knowledge and not memories:
+            response = f"Nie pamiętam nic o '{topic}'. Może mi opowiesz?"
+
+        return response
+
+    async def _handle_learn(self, message: str) -> str:
+        """Obsłuż naukę nowych faktów."""
+        # Wyodrębnij fakt
+        fact = message
+        for keyword in ["zapamiętaj ", "naucz się ", "zanotuj "]:
+            if keyword in message.lower():
+                fact = message.split(keyword, 1)[1]
+                break
+
+        # Zapisz fakt
+        await self._memory.learn_fact(
+            category="user_taught",
+            topic=fact.split()[0] if fact.split() else "general",
+            fact=fact,
+            source="user",
+            confidence=0.9
+        )
+
+        # Potwierdź ludzkimi słowami
+        confirmations = [
+            f"Zapamiętałem! 📝 '{fact[:50]}...'",
+            f"Ok, zapisuję: {fact[:50]}...",
+            f"Dobra, będę pamiętać że {fact[:50]}...",
+        ]
+        import random
+        return random.choice(confirmations)
+
     # ==================== Tryb Głosowy ====================
 
     async def start_voice_mode(self):
@@ -482,6 +667,26 @@ Pełny raport zapisany w: {report_path}"""
     def scheduler(self) -> SchedulerModule:
         """Dostęp do Schedulera."""
         return self._scheduler
+
+    @property
+    def guardian(self) -> GuardianModule:
+        """Dostęp do modułu Guardian (bezpieczeństwo)."""
+        return self._guardian
+
+    @property
+    def memory(self) -> MemoryModule:
+        """Dostęp do modułu Memory (baza danych)."""
+        return self._memory
+
+    @property
+    def scraper(self) -> WebScraperModule:
+        """Dostęp do modułu WebScraper (zbieranie danych)."""
+        return self._scraper
+
+    @property
+    def behavior(self) -> HumanBehaviorEngine:
+        """Dostęp do modułu HumanBehavior (zachowania ludzkie)."""
+        return self._behavior
 
 
 # ==================== Singleton ====================

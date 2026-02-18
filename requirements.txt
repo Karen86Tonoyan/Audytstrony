@@ -82,3 +82,6 @@ python-dotenv>=1.0.0
 pydantic>=2.5.0
 loguru>=0.7.0
 tqdm>=4.66.0
+
+# RSS & News
+feedparser>=6.0.0
