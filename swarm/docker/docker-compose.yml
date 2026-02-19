@@ -1,0 +1,88 @@
+# 🐜 SWARM - Docker Compose
+# Uruchom cały rój agentów
+
+version: '3.8'
+
+services:
+  # Główny rój agentów
+  swarm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: swarm-agents
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      - SWARM_CODE_WORKERS=10
+      - SWARM_ENABLE_CERBER=true
+      - SWARM_ENABLE_LASUCH=true
+      - SWARM_ENABLE_GUARDIAN=true
+      - SWARM_CERBER_AGGRESSION=0.3
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - swarm-data:/app/data
+      - swarm-logs:/app/logs
+    networks:
+      - swarm-network
+    depends_on:
+      - ollama
+      - redis
+
+  # Ollama - lokalny LLM
+  ollama:
+    image: ollama/ollama:latest
+    container_name: swarm-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - swarm-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Redis - shared memory backend
+  redis:
+    image: redis:alpine
+    container_name: swarm-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - swarm-network
+    command: redis-server --appendonly yes
+
+  # Monitor - dashboard
+  monitor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.monitor
+    container_name: swarm-monitor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SWARM_API=http://swarm:8765
+    networks:
+      - swarm-network
+    depends_on:
+      - swarm
+
+networks:
+  swarm-network:
+    driver: bridge
+
+volumes:
+  swarm-data:
+  swarm-logs:
+  ollama-models:
+  redis-data:
