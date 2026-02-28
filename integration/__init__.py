@@ -8,6 +8,7 @@ Connects all systems:
 - OpenFGA (Fine-grained authorization)
 - UI-TARS (Vision-Language GUI automation)
 - Agent-Browser (Vercel headless browser CLI)
+- OpenFang (Agent Operating System with Hands)
 
 Architecture:
     ┌─────────────────────────────────────────────────────────────┐
@@ -77,6 +78,18 @@ from .agent_browser_adapter import (
     BrowserResult,
 )
 
+from .openfang_adapter import (
+    OpenFangClient,
+    OpenFangSwarmAdapter,
+    HermesOpenFangBridge,
+    Hand,
+    HandStatus,
+    HandConfig,
+    HandResult,
+    AgentTemplate,
+    OpenFangStatus,
+)
+
 __all__ = [
     # Bridge
     "UnifiedBridge",
@@ -105,4 +118,14 @@ __all__ = [
     "ElementRef",
     "Snapshot",
     "BrowserResult",
+    # OpenFang Agent OS
+    "OpenFangClient",
+    "OpenFangSwarmAdapter",
+    "HermesOpenFangBridge",
+    "Hand",
+    "HandStatus",
+    "HandConfig",
+    "HandResult",
+    "AgentTemplate",
+    "OpenFangStatus",
 ]
