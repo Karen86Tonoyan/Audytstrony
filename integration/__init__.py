@@ -7,6 +7,7 @@ Connects all systems:
 - SWARM (Parallel execution workers)
 - OpenFGA (Fine-grained authorization)
 - UI-TARS (Vision-Language GUI automation)
+- Agent-Browser (Vercel headless browser CLI)
 
 Architecture:
     ┌─────────────────────────────────────────────────────────────┐
@@ -67,6 +68,15 @@ from .ui_tars_adapter import (
     UITARSResult,
 )
 
+from .agent_browser_adapter import (
+    AgentBrowserClient,
+    AgentBrowserSwarmAdapter,
+    BrowserState,
+    ElementRef,
+    Snapshot,
+    BrowserResult,
+)
+
 __all__ = [
     # Bridge
     "UnifiedBridge",
@@ -88,4 +98,11 @@ __all__ = [
     "UIAction",
     "ActionType",
     "UITARSResult",
+    # Browser Automation
+    "AgentBrowserClient",
+    "AgentBrowserSwarmAdapter",
+    "BrowserState",
+    "ElementRef",
+    "Snapshot",
+    "BrowserResult",
 ]
