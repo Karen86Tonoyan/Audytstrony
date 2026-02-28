@@ -200,8 +200,13 @@ Audytstrony/
 │   │   └── programs.py     # Zarządzanie programami
 │   └── config/
 │       └── settings.py     # Konfiguracja
-├── data/                   # Dane robocze
-├── tests/                  # Testy
+├── hermes/                 # Framework agentów Hermes
+├── swarm/                  # Koordynacja wielu agentów (SWARM/ALFA)
+├── ui-tars/                # Automatyzacja UI
+├── browser-extension/      # Rozszerzenie przeglądarki
+├── openfga/                # Autoryzacja OpenFGA
+├── integration/            # Moduły integracji (Hermes, OpenFGA, UI-TARS)
+├── karentonoyan-website/   # Pliki strony internetowej
 ├── main.py                 # Punkt wejścia
 ├── requirements.txt        # Zależności
 ├── pyproject.toml          # Konfiguracja pakietu
