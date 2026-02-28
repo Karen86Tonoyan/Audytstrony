@@ -1,0 +1,138 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# ALFA_CORE_KERNEL v3.0 — DOCKER COMPOSE
+# ═══════════════════════════════════════════════════════════════════════════
+# Full production stack with Redis, optional Ollama
+# WOLF-KING ORCHESTRATION
+# ═══════════════════════════════════════════════════════════════════════════
+
+version: "3.9"
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # ALFA CORE — Main Application
+  # ─────────────────────────────────────────────────────────────────────────
+  alfa_core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: alfa_core
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persistent storage
+      - ./storage/gemini_mirror:/app/storage/gemini_mirror
+      - ./storage/chunk_cache:/app/storage/chunk_cache
+      - ./data:/app/data
+      - ./logs:/app/logs
+      # Config (read-only)
+      - ./config:/app/config:ro
+    environment:
+      - ALFA_ENV=production
+      - ALFA_LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379/0
+      # API keys from .env file
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - alfa_network
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # REDIS — Cache & Queue
+  # ─────────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: alfa_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - alfa_network
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # OLLAMA — Local AI Models (optional)
+  # ─────────────────────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: alfa_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    profiles:
+      - with-ollama
+    networks:
+      - alfa_network
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # DEVELOPMENT — Hot reload version
+  # ─────────────────────────────────────────────────────────────────────────
+  alfa_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: alfa_dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./storage:/app/storage
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - ALFA_ENV=development
+      - ALFA_LOG_LEVEL=DEBUG
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+    depends_on:
+      - redis
+    profiles:
+      - dev
+    networks:
+      - alfa_network
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VOLUMES
+# ─────────────────────────────────────────────────────────────────────────────
+volumes:
+  redis_data:
+    driver: local
+  ollama_models:
+    driver: local
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────────────────────────────────────
+networks:
+  alfa_network:
+    driver: bridge

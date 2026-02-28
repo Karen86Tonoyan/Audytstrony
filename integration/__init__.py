@@ -9,6 +9,8 @@ Connects all systems:
 - UI-TARS (Vision-Language GUI automation)
 - Agent-Browser (Vercel headless browser CLI)
 - OpenFang (Agent Operating System with Hands)
+- ALFA_CORE (Security-first AI system with Cerber/Guard)
+- Crush (Charm terminal coding assistant, multi-model)
 
 Architecture:
     ┌─────────────────────────────────────────────────────────────┐
@@ -90,6 +92,28 @@ from .openfang_adapter import (
     OpenFangStatus,
 )
 
+from .alfa_core_adapter import (
+    AlfaCoreClient,
+    AlfaCoreSwarmAdapter,
+    HermesAlfaBridge,
+    AIProfile,
+    ModuleCategory,
+    CerberStatus,
+    GuardStatus,
+    AlfaCoreStatus,
+)
+
+from .crush_adapter import (
+    CrushClient,
+    CrushSwarmAdapter,
+    HermesCrushBridge,
+    Provider,
+    MCPTransport,
+    CrushConfig,
+    CrushSession,
+    CrushResult,
+)
+
 __all__ = [
     # Bridge
     "UnifiedBridge",
@@ -128,4 +152,22 @@ __all__ = [
     "HandResult",
     "AgentTemplate",
     "OpenFangStatus",
+    # ALFA_CORE Security System
+    "AlfaCoreClient",
+    "AlfaCoreSwarmAdapter",
+    "HermesAlfaBridge",
+    "AIProfile",
+    "ModuleCategory",
+    "CerberStatus",
+    "GuardStatus",
+    "AlfaCoreStatus",
+    # Crush Terminal Assistant
+    "CrushClient",
+    "CrushSwarmAdapter",
+    "HermesCrushBridge",
+    "Provider",
+    "MCPTransport",
+    "CrushConfig",
+    "CrushSession",
+    "CrushResult",
 ]

@@ -1,0 +1,1 @@
+cd C:\Users\ktono\ścieżka\do\repo\alfa-brige-360git add ksiazka_manipulacji.md redflag.tex 12_RED_FLAG.pdf filtryTONOYAN/git tag v1.0git push origin main --tags

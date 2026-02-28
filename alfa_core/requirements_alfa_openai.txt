@@ -1,0 +1,18 @@
+# ALFA INTELLIGENCE - Requirements
+# OpenAI Developer Integration + Psychology + Security
+
+# Core OpenAI
+openai>=1.0.0
+
+# Async support (built-in Python 3.7+)
+# asyncio - included with Python
+
+# Environment variables
+python-dotenv
+
+# Optional: Enhanced features
+requests>=2.31.0
+aiohttp>=3.9.0
+
+# Data handling
+dataclasses; python_version < '3.7'

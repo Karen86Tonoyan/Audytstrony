@@ -1,0 +1,89 @@
+import asyncio
+import inspect
+import traceback
+
+class SecureExecutor:
+    def __init__(self, sandbox_globals=None):
+        self.sandbox_globals = sandbox_globals or {}
+
+    async def _run_async(self, func, *args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            return f"[ASYNC EXEC ERROR] {e}\n{traceback.format_exc()}"
+
+    def _run_sync(self, func, *args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            return f"[SYNC EXEC ERROR] {e}\n{traceback.format_exc()}"
+
+    async def execute(self, func, *args, **kwargs):
+        """
+        Unified async-aware executor.
+        Handles:
+        - async functions
+        - sync functions
+        - functions returning coroutine
+        """
+        try:
+            # funkcja jest async
+            if inspect.iscoroutinefunction(func):
+                return await self._run_async(func, *args, **kwargs)
+
+            # funkcja sync
+            result = self._run_sync(func, *args, **kwargs)
+
+            # ale zwróciła coroutine
+            if inspect.iscoroutine(result):
+                return await result
+
+            return result
+
+        except Exception as e:
+            return f"[EXEC ERROR] {e}\n{traceback.format_exc()}"
+
+[changelog]
+header = """
+# Changelog
+
+You can install any of these versions: `npm install -g codex@version`
+"""
+
+body = """
+{% if version -%}
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{%- else %}
+## [unreleased]
+{% endif %}
+
+{%- for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+
+{% for commit in commits %}- {% if commit.scope %}*({{ commit.scope }})* {% endif %}{% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}
+{% endfor %}
+
+{%- endfor -%}
+"""
+
+footer = """
+<!-- generated - do not edit -->
+"""
+
+trim = true
+postprocessors = []
+
+[git]
+conventional_commits = true
+
+commit_parsers = [
+  { message = "^feat", group = "<!-- 0 -->🚀 Features" },
+  { message = "^fix",  group = "<!-- 1 -->🪲 Bug Fixes" },
+  { message = "^bump", group = "<!-- 6 -->🛳️ Release" },
+  # Fallback – skip anything that didn't match the above rules.
+  { message = ".*",  group = "<!-- 10 -->💼 Other" },
+]
+
+filter_unconventional = false
+sort_commits = "oldest"
+topo_order = false

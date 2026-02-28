@@ -1,0 +1,28 @@
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch master
+# Changes to be committed:
+#	new file:   ALFA_APP/app.py
+#	new file:   ALFA_APP/src/security/cerber.py
+#	new file:   ALFA_APP/src/ui/dashboard.py
+#	new file:   ALFA_BRAIN/README_ALFA_BRAIN_v4.md
+#	new file:   ALFA_BRAIN/opis4.md
+#	deleted:    README.md
+#	new file:   cerber_test/Untitled-1.py
+#	new file:   cerber_test/def test_sign_and_verify_round_trip(sche.py
+#	deleted:    cerber_test/log.txt
+#	new file:   extra/network_obfuscation.py
+#	new file:   extra/tunnel_obfuscation.py
+#	deleted:    falcon_keys.txt
+#	deleted:    requirements.txt
+#	deleted:    setup.bat
+#	new file:   tools/1.cshtml
+#	modified:   tools/__init__.py
+#	new file:   tools/ai_local.py
+#	new file:   tools/nano_banana.py
+#
+# Untracked files:
+#	ALFA_APP/src/core/
+#

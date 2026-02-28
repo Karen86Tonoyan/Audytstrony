@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  guardian:
+    build: .
+    container_name: tonoyan-guardian
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    command: >
+      uvicorn main:app --host ${APP_HOST:-0.0.0.0} --port 8000
+      --log-level ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./logs:/app/logs  # Persistent logs
+    restart: always  # Auto-restart na fail
+
+  redis:
+    image: redis:7-alpine
+    container_name: tonoyan-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tonoyan-prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - guardian
+
+volumes:
+  redis_data:

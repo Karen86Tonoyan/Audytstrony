@@ -1,0 +1,54 @@
+# OLLAMA
+.ollama/
+models/
+blobs/
+*.bin
+*.blob
+*.cache
+*.gguf
+*.safetensors
+
+# === ALFA SECURITY - CRITICAL ===
+# NEVER commit these files!
+.env
+.env.*
+*.key
+*.pem
+master.key
+secrets.enc
+alfa_core/security/master.key
+alfa_core/security/secrets.enc
+**/master.key
+**/secrets.enc
+
+# Python junk
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code
+.vscode/
+
+# Gradle
+.gradle/
+build/
+local.properties
+*.log
+
+# Android/Kotlin
+*.apk
+*.aab
+*.dex
+*.class
+*.jar
+*.aar
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# OS
+.DS_Store
+Thumbs.db
