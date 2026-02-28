@@ -11,6 +11,8 @@ Connects all systems:
 - OpenFang (Agent Operating System with Hands)
 - ALFA_CORE (Security-first AI system with Cerber/Guard)
 - Crush (Charm terminal coding assistant, multi-model)
+- Glances (Cross-platform system monitoring with MCP)
+- OpenWork (Open-source Claude Cowork/Codex alternative)
 
 Architecture:
     ┌─────────────────────────────────────────────────────────────┐
@@ -114,6 +116,34 @@ from .crush_adapter import (
     CrushResult,
 )
 
+from .glances_adapter import (
+    GlancesClient,
+    GlancesSwarmAdapter,
+    ResourceAwareScheduler,
+    CPUStats,
+    MemoryStats,
+    DiskStats,
+    NetworkStats,
+    ProcessInfo,
+    ContainerInfo,
+    SystemAlert,
+    AlertLevel,
+    GlancesStatus,
+)
+
+from .openwork_adapter import (
+    OpenWorkClient,
+    OpenWorkSwarmAdapter,
+    Session,
+    SessionStatus,
+    Skill,
+    Template,
+    PermissionRequest,
+    PermissionAction,
+    ApprovalMode,
+    OpenWorkStatus,
+)
+
 __all__ = [
     # Bridge
     "UnifiedBridge",
@@ -170,4 +200,28 @@ __all__ = [
     "CrushConfig",
     "CrushSession",
     "CrushResult",
+    # Glances System Monitoring
+    "GlancesClient",
+    "GlancesSwarmAdapter",
+    "ResourceAwareScheduler",
+    "CPUStats",
+    "MemoryStats",
+    "DiskStats",
+    "NetworkStats",
+    "ProcessInfo",
+    "ContainerInfo",
+    "SystemAlert",
+    "AlertLevel",
+    "GlancesStatus",
+    # OpenWork Agent Desktop
+    "OpenWorkClient",
+    "OpenWorkSwarmAdapter",
+    "Session",
+    "SessionStatus",
+    "Skill",
+    "Template",
+    "PermissionRequest",
+    "PermissionAction",
+    "ApprovalMode",
+    "OpenWorkStatus",
 ]
