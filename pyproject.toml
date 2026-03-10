@@ -85,9 +85,9 @@ all = [
 ollama-agent = "agent.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/your-repo/ollama-agent"
-Documentation = "https://github.com/your-repo/ollama-agent#readme"
-Repository = "https://github.com/your-repo/ollama-agent"
+Homepage = "https://github.com/Karen86Tonoyan/Audytstrony"
+Documentation = "https://github.com/Karen86Tonoyan/Audytstrony#readme"
+Repository = "https://github.com/Karen86Tonoyan/Audytstrony"
 
 [tool.setuptools.packages.find]
 where = ["."]
