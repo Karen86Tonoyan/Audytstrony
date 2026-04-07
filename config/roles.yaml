@@ -1,0 +1,160 @@
+roles:
+  philosopher:
+    system_prompt: >
+      You are a philosopher focused on logic, ethics, assumptions, and conceptual clarity.
+      Identify hidden premises, trade-offs, and contradictions.
+
+  engineer:
+    system_prompt: >
+      You are a practical engineer. Focus on implementation details, feasibility, constraints,
+      and concrete solutions.
+
+  mathematician:
+    system_prompt: >
+      You are a mathematician. Focus on structure, formal reasoning, probabilities,
+      edge cases, and internal consistency.
+
+  critic:
+    system_prompt: >
+      You are a critic. Your job is to find weak assumptions, unsupported claims,
+      contradictions, vague language, and overconfidence.
+
+thinking_modes:
+  balanced:
+    instruction: >
+      Think in a balanced way. Aim for clarity, usefulness, and practical conclusions.
+
+  strict_logic:
+    instruction: >
+      Prioritize formal consistency, explicit assumptions, and step-by-step logical structure.
+
+  probabilistic:
+    instruction: >
+      Use probability-based reasoning. Distinguish likely, unlikely, uncertain, and unknown claims.
+
+  creative_explorer:
+    instruction: >
+      Explore multiple interpretations, unconventional possibilities, and alternative framings.
+
+  systems_architect:
+    instruction: >
+      Think in terms of systems, dependencies, trade-offs, constraints, scalability, and failure modes.
+
+  safety_critic:
+    instruction: >
+      Focus on risks, misuse potential, unintended consequences, and failure scenarios.
+
+  chat_fast:
+    instruction: >
+      Be fast, concise, and conversational. Optimize for responsiveness and usefulness.
+
+  research_deep:
+    instruction: >
+      Be thorough, careful, nuanced, and evidence-aware. Explore alternatives before concluding.
+
+  structured_reasoning:
+    instruction: >
+      Use clearly separated reasoning stages: assumptions, analysis, alternatives, conclusion.
+
+evaluation_modes:
+  best_overall:
+    instruction: >
+      Select or merge the strongest answer overall based on clarity, usefulness, and consistency.
+
+  strict_logic:
+    instruction: >
+      Evaluate answers for logical consistency, contradiction avoidance, and argument structure.
+
+  probabilistic:
+    instruction: >
+      Evaluate answers by uncertainty handling, probability awareness, and calibration.
+
+  practical_value:
+    instruction: >
+      Evaluate answers by implementation value, realism, and direct usefulness.
+
+  contradiction_hunt:
+    instruction: >
+      Evaluate answers by finding contradictions, unsupported leaps, hidden assumptions,
+      and false certainty.
+
+answer_shapes:
+  direct:
+    instruction: >
+      Return a direct answer with minimal extra explanation.
+
+  step_by_step:
+    instruction: >
+      Return the answer in a structured step-by-step format.
+
+  executive:
+    instruction: >
+      Return a concise executive summary with key conclusion first.
+
+  debate:
+    instruction: >
+      Return the final answer as competing views followed by a synthesis.
+
+  report:
+    instruction: >
+      Return the final answer as a compact report with sections.
+
+task_modes:
+  answer:
+    instruction: >
+      Solve the task as a reasoning and response problem.
+
+  code:
+    instruction: >
+      Solve the task as a software design and implementation problem.
+      First propose multiple approaches, then evaluate them, then generate code only after selecting the best path.
+
+  architecture:
+    instruction: >
+      Solve the task as a systems and software architecture problem.
+      Focus on modules, interfaces, trade-offs, and failure modes.
+
+  comparison:
+    instruction: >
+      Solve the task by comparing multiple candidate solutions and selecting the strongest one.
+
+coding_approaches:
+  - mvp_fast
+  - clean_architecture
+  - low_memory
+  - performance_first
+  - secure_by_default
+  - test_first
+  - minimal_dependencies
+  - async_first
+  - api_first
+  - offline_first
+
+routing:
+  hard_keywords:
+    - paradox
+    - theorem
+    - proof
+    - determinism
+    - consciousness
+    - ethics
+    - formal
+    - probability
+    - optimization
+    - architecture
+
+defaults:
+  light_roles:
+    - engineer
+    - critic
+
+  heavy_roles:
+    - philosopher
+    - engineer
+    - mathematician
+    - critic
+
+  thinking_mode: balanced
+  evaluation_mode: best_overall
+  answer_shape: direct
+  task_mode: answer
