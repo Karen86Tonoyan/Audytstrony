@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
+import zipfile
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,13 +11,25 @@ from typing import Dict, List, Any
 
 import yaml
 
+from backends.ollama_backend import OllamaBackend
+
 
 @dataclass
 class CandidateAnswer:
     role: str
+    model: str
     thinking_mode: str
     prompt: str
     answer: str
+
+
+@dataclass
+class GeneratedProject:
+    project_name: str
+    summary: str
+    file_tree: List[str]
+    files: Dict[str, str]
+    next_steps: List[str]
 
 
 @dataclass
@@ -35,53 +49,13 @@ class RoundResult:
     approaches: List[Dict[str, Any]]
     selected_approach: str
     candidates: List[Dict[str, Any]]
+    generated_project: Dict[str, Any] | None
+    project_path: str | None
+    zip_path: str | None
     final_answer: str
 
 
-class RoleBackend:
-    """
-    Placeholder backend.
-
-    Replace later with:
-    - local backend
-    - API backend
-    - mixed routing backend
-    """
-
-    def generate(
-        self,
-        role: str,
-        role_prompt: str,
-        thinking_mode: str,
-        thinking_instruction: str,
-        question: str,
-        task_mode: str,
-        selected_approach: str = "",
-    ) -> str:
-        full_prompt = (
-            f"ROLE: {role}\n"
-            f"ROLE INSTRUCTION: {role_prompt}\n"
-            f"TASK MODE: {task_mode}\n"
-            f"THINKING MODE: {thinking_mode}\n"
-            f"THINKING INSTRUCTION: {thinking_instruction}\n"
-            f"SELECTED APPROACH: {selected_approach or 'none'}\n\n"
-            f"QUESTION: {question}"
-        )
-
-        return (
-            f"[{role.upper()} | task={task_mode} | mode={thinking_mode}]\n"
-            f"{full_prompt}\n\n"
-            f"Draft response placeholder.\n"
-            f"Replace RoleBackend with a real backend.\n"
-        )
-
-
 class ArbiterBackend:
-    """
-    Placeholder arbiter.
-    Replace later with a real synthesis/verifier backend.
-    """
-
     def synthesize(
         self,
         question: str,
@@ -94,6 +68,7 @@ class ArbiterBackend:
         selected_approach: str,
         approaches: List[Dict[str, Any]],
         candidates: List[CandidateAnswer],
+        generated_project: GeneratedProject | None = None,
     ) -> str:
         lines = [
             "Final synthesized answer",
@@ -118,7 +93,7 @@ class ArbiterBackend:
 
         lines.extend(["", "Considered candidates:"])
         for item in candidates:
-            lines.append(f"- {item.role} ({item.thinking_mode})")
+            lines.append(f"- {item.role} [{item.model}] ({item.thinking_mode})")
 
         lines.extend(
             [
@@ -128,9 +103,27 @@ class ArbiterBackend:
                 "",
                 "Output format rule:",
                 answer_shape_instruction,
+            ]
+        )
+
+        if generated_project:
+            lines.extend(
+                [
+                    "",
+                    "Generated project summary:",
+                    generated_project.summary,
+                    "",
+                    "Project files:",
+                ]
+            )
+            for path in generated_project.file_tree:
+                lines.append(f"- {path}")
+
+        lines.extend(
+            [
                 "",
                 "Merged conclusion:",
-                "This is a scaffold arbitration result. In the real system, the arbiter should compare candidate answers, score them, detect contradictions, estimate confidence, and either merge or select the strongest one.",
+                "This is the current synthesis output. In the real system, the arbiter should compare candidate answers, score them, detect contradictions, estimate confidence, and either merge or select the strongest one.",
             ]
         )
         return "\n".join(lines)
@@ -141,7 +134,7 @@ class Arena:
         self.config_path = Path(config_path)
         self.log_path = Path(log_path)
         self.config = self._load_config()
-        self.role_backend = RoleBackend()
+        self.role_backend = OllamaBackend(default_model="llama3")
         self.arbiter_backend = ArbiterBackend()
 
     def _load_config(self) -> Dict[str, Any]:
@@ -186,7 +179,6 @@ class Arena:
     def generate_coding_approaches(self, question: str) -> List[Dict[str, Any]]:
         approach_names = self.config.get("coding_approaches", [])
         approaches = []
-
         for name in approach_names:
             approaches.append(
                 {
@@ -196,13 +188,142 @@ class Arena:
                     "weaknesses": ["Scaffold weakness 1"],
                 }
             )
-
         return approaches
 
     def select_best_approach(self, approaches: List[Dict[str, Any]], evaluation_mode: str) -> str:
         if not approaches:
             return ""
         return approaches[0]["name"]
+
+    def slugify_project_name(self, text: str) -> str:
+        text = text.lower().strip()
+        text = re.sub(r"[^a-z0-9]+", "_", text)
+        text = re.sub(r"_+", "_", text).strip("_")
+        return text[:40] if text else "generated_app"
+
+    def infer_project_name(self, question: str, selected_approach: str) -> str:
+        base = self.slugify_project_name(question)
+        if not base:
+            base = "generated_app"
+        if selected_approach:
+            return f"{base}_{selected_approach}"[:60]
+        return base[:60]
+
+    def generate_project_from_approach(
+        self,
+        question: str,
+        selected_approach: str,
+        thinking_mode: str,
+    ) -> GeneratedProject:
+        project_name = self.infer_project_name(question, selected_approach)
+
+        summary = (
+            f"Starter project generated for question: {question}. "
+            f"Selected approach: {selected_approach}. "
+            f"Thinking mode: {thinking_mode}."
+        )
+
+        file_tree = [
+            "README.md",
+            "requirements.txt",
+            "main.py",
+            "run.bat",
+            "run.sh",
+            "app/__init__.py",
+            "app/core.py",
+        ]
+
+        files: Dict[str, str] = {
+            "README.md": f"""# {project_name}
+
+Generated from GPT Arena.
+
+## Selected approach
+{selected_approach}
+
+## Goal
+{question}
+
+## Run
+
+### Windows
+```bash
+run.bat
+```
+
+### Linux / macOS
+```bash
+chmod +x run.sh
+./run.sh
+```
+""",
+            "requirements.txt": "requests>=2.31\n",
+            "main.py": """from app.core import run_app
+
+if __name__ == "__main__":
+    run_app()
+""",
+            "run.bat": """@echo off
+pip install -r requirements.txt
+python main.py
+pause
+""",
+            "run.sh": """#!/usr/bin/env bash
+pip install -r requirements.txt
+python main.py
+""",
+            "app/__init__.py": "",
+            "app/core.py": f"""def run_app():
+    print("Project goal:")
+    print("{question}")
+    print("Selected approach:")
+    print("{selected_approach}")
+    print("Thinking mode:")
+    print("{thinking_mode}")
+""",
+        }
+
+        next_steps = [
+            "replace scaffold logic with real business logic",
+            "add tests",
+            "split config and runtime concerns",
+            "add linting and formatting",
+            "add Dockerfile if deployment is needed",
+        ]
+
+        return GeneratedProject(
+            project_name=project_name,
+            summary=summary,
+            file_tree=file_tree,
+            files=files,
+            next_steps=next_steps,
+        )
+
+    def save_project_to_disk(self, project: GeneratedProject) -> str:
+        base_dir = Path("generated_projects")
+        base_dir.mkdir(exist_ok=True)
+
+        project_dir = base_dir / f"{project.project_name}_{uuid.uuid4().hex[:6]}"
+        project_dir.mkdir(parents=True, exist_ok=True)
+
+        for file_path, content in project.files.items():
+            full_path = project_dir / file_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            with full_path.open("w", encoding="utf-8") as f:
+                f.write(content)
+
+        return str(project_dir)
+
+    def zip_project(self, project_dir: str) -> str:
+        project_path = Path(project_dir)
+        zip_path = project_path.with_suffix(".zip")
+
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for file in project_path.rglob("*"):
+                if file.is_file():
+                    zipf.write(file, arcname=file.relative_to(project_path))
+
+        return str(zip_path)
 
     def run_round(
         self,
@@ -242,10 +363,20 @@ class Arena:
 
         approaches: List[Dict[str, Any]] = []
         selected_approach = ""
+        generated_project: GeneratedProject | None = None
+        project_path: str | None = None
+        zip_path: str | None = None
 
         if task_mode == "code":
             approaches = self.generate_coding_approaches(question)
             selected_approach = self.select_best_approach(approaches, evaluation_mode)
+            generated_project = self.generate_project_from_approach(
+                question=question,
+                selected_approach=selected_approach,
+                thinking_mode=thinking_mode,
+            )
+            project_path = self.save_project_to_disk(generated_project)
+            zip_path = self.zip_project(project_path)
 
         candidates: List[CandidateAnswer] = []
         roles_cfg = self.config.get("roles", {})
@@ -256,6 +387,8 @@ class Arena:
                 raise ValueError(f"Missing role config for role: {role_name}")
 
             role_prompt = str(role_info.get("system_prompt", "")).strip()
+            role_model = str(role_info.get("model", "llama3")).strip()
+
             answer = self.role_backend.generate(
                 role=role_name,
                 role_prompt=role_prompt,
@@ -264,10 +397,12 @@ class Arena:
                 question=question,
                 task_mode=task_mode,
                 selected_approach=selected_approach,
+                model=role_model,
             )
             candidates.append(
                 CandidateAnswer(
                     role=role_name,
+                    model=role_model,
                     thinking_mode=thinking_mode,
                     prompt=role_prompt,
                     answer=answer,
@@ -289,6 +424,7 @@ class Arena:
             selected_approach=selected_approach,
             approaches=approaches,
             candidates=candidates,
+            generated_project=generated_project,
         )
 
         result = RoundResult(
@@ -307,6 +443,9 @@ class Arena:
             approaches=approaches,
             selected_approach=selected_approach,
             candidates=[asdict(c) for c in candidates],
+            generated_project=asdict(generated_project) if generated_project else None,
+            project_path=project_path,
+            zip_path=zip_path,
             final_answer=final_answer,
         )
 

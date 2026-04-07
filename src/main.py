@@ -95,6 +95,27 @@ def main() -> None:
                 print(f"- {item['name']}: {item['description']}")
             print(f"\nSelected approach: {result.selected_approach}")
 
+            if result.generated_project:
+                print("\n--- Generated project summary ---")
+                print(result.generated_project["summary"])
+
+                print("\n--- File tree ---")
+                for path in result.generated_project["file_tree"]:
+                    print(f"- {path}")
+
+                print("\n--- Sample files ---")
+                for path, content in result.generated_project["files"].items():
+                    print(f"\n### {path}\n")
+                    print(content)
+
+            if result.project_path:
+                print("\n--- Project saved to ---")
+                print(result.project_path)
+
+            if result.zip_path:
+                print("\n--- ZIP archive ---")
+                print(result.zip_path)
+
         print("\n--- Final answer ---")
         print(result.final_answer)
         print("\nSaved to logs/results.jsonl\n")
