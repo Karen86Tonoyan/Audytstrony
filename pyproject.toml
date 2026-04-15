@@ -92,7 +92,7 @@ Repository = "https://github.com/your-repo/ollama-agent"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["agent*"]
+include = ["agent*", "src*"]
 
 [tool.black]
 line-length = 100

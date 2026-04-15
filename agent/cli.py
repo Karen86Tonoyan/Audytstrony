@@ -415,6 +415,60 @@ def version():
     console.print(f"Vision: {settings.ollama.vision_model}")
 
 
+@app.command()
+def arena(
+    question: str = typer.Argument(None, help="Question for the arena (skips interactive prompt)"),
+    task_mode: str = typer.Option(None, "--task", "-t", help="Task mode: answer|code|architecture|comparison"),
+    thinking_mode: str = typer.Option(None, "--thinking", help="Thinking mode"),
+    evaluation_mode: str = typer.Option(None, "--eval", help="Evaluation mode"),
+    answer_shape: str = typer.Option(None, "--shape", help="Answer shape"),
+):
+    """
+    Run GPT Arena multi-role reasoning engine.
+
+    Examples:
+        ollama-agent arena
+        ollama-agent arena "Build a REST API" --task code --thinking structured_reasoning
+    """
+    # src/ is a sibling of agent/ — add project root to path so src.arena is importable
+    _project_root = Path(__file__).resolve().parent.parent
+    if str(_project_root) not in sys.path:
+        sys.path.insert(0, str(_project_root))
+
+    try:
+        from src.arena import Arena
+    except ImportError as exc:
+        console.print(f"[red]Could not import Arena: {exc}[/red]")
+        raise typer.Exit(1)
+
+    arena_engine = Arena()
+
+    if question:
+        # Non-interactive single-shot mode
+        result = arena_engine.run_round(
+            question=question,
+            task_mode=task_mode,
+            thinking_mode=thinking_mode,
+            evaluation_mode=evaluation_mode,
+            answer_shape=answer_shape,
+        )
+        console.print(Panel(result.final_answer, title="Arena result", border_style="green"))
+        console.print(
+            f"[dim]roles={','.join(result.selected_roles)}  "
+            f"task={result.task_mode}  "
+            f"confidence={result.confidence}  "
+            f"conflict={result.conflict_detected}[/dim]"
+        )
+        if result.project_path:
+            console.print(f"[green]Project saved:[/green] {result.project_path}")
+        if result.zip_path:
+            console.print(f"[green]ZIP:[/green] {result.zip_path}")
+    else:
+        # Delegate to the interactive arena CLI
+        from src.main import main as arena_main
+        arena_main()
+
+
 def main():
     """Główna funkcja CLI."""
     app()
