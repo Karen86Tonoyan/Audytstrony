@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Allow running as a standalone script: python src/main.py
+sys.path.insert(0, str(Path(__file__).parent))
+
 from arena import Arena
 
 
@@ -9,7 +15,11 @@ def choose_from_list(title: str, options: list[str], default_value: str) -> str:
         marker = " (default)" if item == default_value else ""
         print(f"{idx}. {item}{marker}")
 
-    raw = input("Choose number or press Enter for default: ").strip()
+    try:
+        raw = input("Choose number or press Enter for default: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return default_value
+
     if not raw:
         return default_value
 
@@ -38,7 +48,12 @@ def main() -> None:
     print("Type 'exit' to quit.\n")
 
     while True:
-        question = input("Question: ").strip()
+        try:
+            question = input("Question: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nBye.")
+            break
+
         if not question:
             print("Please enter a question.\n")
             continue
@@ -118,7 +133,7 @@ def main() -> None:
 
         print("\n--- Final answer ---")
         print(result.final_answer)
-        print("\nSaved to logs/results.jsonl\n")
+        print()
 
 
 if __name__ == "__main__":
