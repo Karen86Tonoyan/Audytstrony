@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import uuid
 import zipfile
@@ -11,7 +12,16 @@ from typing import Dict, List, Any
 
 import yaml
 
-from backends.ollama_backend import OllamaBackend
+from .backends.ollama_backend import OllamaBackend
+
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_DEFAULT_CONFIG = Path(
+    os.environ.get("ARENA_CONFIG_PATH", str(_PROJECT_ROOT / "config" / "roles.yaml"))
+)
+_DEFAULT_LOG = Path(
+    os.environ.get("ARENA_LOG_PATH", str(_PROJECT_ROOT / "logs" / "results.jsonl"))
+)
+_LOG_FULL_CONTENT = os.environ.get("ARENA_LOG_FULL", "false").lower() == "true"
 
 
 @dataclass
@@ -123,16 +133,20 @@ class ArbiterBackend:
             [
                 "",
                 "Merged conclusion:",
-                "This is the current synthesis output. In the real system, the arbiter should compare candidate answers, score them, detect contradictions, estimate confidence, and either merge or select the strongest one.",
+                "This is a scaffold arbitration result. In the real system, the arbiter should compare candidate answers, score them, detect contradictions, estimate confidence, and either merge or select the strongest one.",
             ]
         )
         return "\n".join(lines)
 
 
 class Arena:
-    def __init__(self, config_path: str = "config/roles.yaml", log_path: str = "logs/results.jsonl") -> None:
-        self.config_path = Path(config_path)
-        self.log_path = Path(log_path)
+    def __init__(
+        self,
+        config_path: str | Path | None = None,
+        log_path: str | Path | None = None,
+    ) -> None:
+        self.config_path = Path(config_path) if config_path else _DEFAULT_CONFIG
+        self.log_path = Path(log_path) if log_path else _DEFAULT_LOG
         self.config = self._load_config()
         self.role_backend = OllamaBackend(default_model="llama3")
         self.arbiter_backend = ArbiterBackend()
@@ -300,7 +314,7 @@ python main.py
         )
 
     def save_project_to_disk(self, project: GeneratedProject) -> str:
-        base_dir = Path("generated_projects")
+        base_dir = _PROJECT_ROOT / "generated_projects"
         base_dir.mkdir(exist_ok=True)
 
         project_dir = base_dir / f"{project.project_name}_{uuid.uuid4().hex[:6]}"
@@ -454,5 +468,30 @@ python main.py
 
     def _append_log(self, result: RoundResult) -> None:
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if _LOG_FULL_CONTENT:
+            record = asdict(result)
+        else:
+            record = {
+                "round_id": result.round_id,
+                "timestamp_utc": result.timestamp_utc,
+                "is_hard": result.is_hard,
+                "selected_roles": result.selected_roles,
+                "task_mode": result.task_mode,
+                "thinking_mode": result.thinking_mode,
+                "evaluation_mode": result.evaluation_mode,
+                "answer_shape": result.answer_shape,
+                "conflict_detected": result.conflict_detected,
+                "confidence": result.confidence,
+                "needs_escalation": result.needs_escalation,
+                "selected_approach": result.selected_approach,
+                "candidate_count": len(result.candidates),
+                "approach_count": len(result.approaches),
+                "project_path": result.project_path,
+                "zip_path": result.zip_path,
+                "question_len": len(result.question),
+                "final_answer_len": len(result.final_answer),
+            }
+
         with self.log_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(asdict(result), ensure_ascii=False) + "\n")
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
