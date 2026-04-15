@@ -12,5 +12,8 @@ class ModelBackend(ABC):
         thinking_mode: str,
         thinking_instruction: str,
         question: str,
+        task_mode: str,
+        selected_approach: str = "",
+        model: str | None = None,
     ) -> str:
         raise NotImplementedError
