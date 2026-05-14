@@ -5,6 +5,7 @@ Interaktywny interfejs wiersza poleceń dla agenta.
 """
 
 import asyncio
+import json
 import sys
 from pathlib import Path
 from typing import Optional
@@ -86,13 +87,11 @@ async def _chat_loop(voice: bool = False, model: str = None):
 
     while True:
         try:
-            # Pobierz input
             user_input = Prompt.ask("\n[bold cyan]Ty[/bold cyan]")
 
             if not user_input.strip():
                 continue
 
-            # Komendy specjalne
             if user_input.lower() in ["exit", "quit", "q"]:
                 console.print("[yellow]Do widzenia![/yellow]")
                 await agent.shutdown()
@@ -116,7 +115,6 @@ async def _chat_loop(voice: bool = False, model: str = None):
                 await agent.start_voice_mode()
                 continue
 
-            # Wyślij do agenta
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -127,7 +125,6 @@ async def _chat_loop(voice: bool = False, model: str = None):
                 response = await agent.chat(user_input)
                 progress.remove_task(task)
 
-            # Wyświetl odpowiedź
             console.print("\n[bold green]Agent:[/bold green]")
             console.print(Markdown(response))
 
@@ -154,7 +151,7 @@ def _print_help():
         ("status", "Pokaż status agenta"),
         ("voice", "Przełącz na tryb głosowy"),
         ("clear", "Wyczyść ekran"),
-        ("exit / quit", "Wyjdź z programu"),
+        ("exit / quit", "Wyjść z programu"),
     ]
 
     for cmd, desc in commands:
@@ -237,7 +234,6 @@ async def _run_audit(url: str, format: str):
 
         progress.remove_task(task)
 
-    # Wyświetl wyniki
     console.print(Panel(f"[bold]Wynik: {result.score}/100[/bold]", title="Audyt zakończony"))
 
     findings_table = Table(title="Znaleziska")
@@ -403,6 +399,119 @@ async def _list_models():
 
 
 @app.command()
+def browse(
+    task: str = typer.Argument(..., help="Zadanie do wykonania w przeglądarce"),
+    model: str = typer.Option("llava", "--model", "-m", help="Model Ollamy (llava dla vision, llama3 dla text-only)"),
+    headless: bool = typer.Option(True, "--headless/--no-headless", help="Tryb bez okna / z oknem"),
+    max_steps: int = typer.Option(20, "--steps", help="Maksymalna liczba kroków"),
+    start_url: str = typer.Option(None, "--url", help="Startowy URL (opcjonalnie)"),
+    output: str = typer.Option(None, "--output", "-o", help="Zapisz wynik do pliku JSON"),
+):
+    """
+    Steruj przeglądarką przez AI (Ollama + Playwright).
+
+    Przykłady:
+        ollama-agent browse "Wyszukaj na google.com: Python tutorials"
+        ollama-agent browse "Sprawdź cenę iPhone na allegro.pl" --model llava
+        ollama-agent browse "Weżdź na hacker news i wypisz top 5 tytułów" --no-headless
+    """
+    asyncio.run(_run_browse(task, model, headless, max_steps, start_url, output))
+
+
+async def _run_browse(
+    task: str,
+    model: str,
+    headless: bool,
+    max_steps: int,
+    start_url: Optional[str],
+    output: Optional[str],
+) -> None:
+    from agent.modules.browser_control import BrowserControlModule
+
+    console.print(Panel(
+        f"[bold]Zadanie:[/bold] {task}\n"
+        f"[dim]Model: {model} | Headless: {headless} | Max steps: {max_steps}[/dim]",
+        title="Browser Agent",
+        border_style="blue",
+    ))
+
+    browser = BrowserControlModule(headless=headless, model=model)
+
+    try:
+        await browser.start()
+
+        if start_url:
+            console.print(f"[dim]Nawiguję do: {start_url}[/dim]")
+            await browser.navigate(start_url)
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            progress_task = progress.add_task("Wykonuję zadanie...", total=None)
+            result = await browser.run_task(task, max_steps=max_steps)
+            progress.remove_task(progress_task)
+
+    finally:
+        await browser.stop()
+
+    table = Table(title="Historia kroków", show_lines=True)
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Akcja", style="cyan")
+    table.add_column("Parametry")
+    table.add_column("Status")
+    table.add_column("Reasoning", no_wrap=False, max_width=50)
+
+    for s in result.steps:
+        status = "[green]OK[/green]" if s.success else f"[red]FAIL[/red]"
+        table.add_row(
+            str(s.step),
+            s.action,
+            json.dumps(s.params, ensure_ascii=False)[:60],
+            status,
+            s.reasoning[:80],
+        )
+    console.print(table)
+
+    color = "green" if result.success else "yellow"
+    console.print(Panel(
+        f"[bold]Wynik:[/bold] {result.summary}\n"
+        f"[dim]URL: {result.final_url}\n"
+        f"Kroki: {len(result.steps)} | Sukces: {result.success}[/dim]",
+        title="Wynik",
+        border_style=color,
+    ))
+
+    if result.extracted_text:
+        console.print("\n[bold]Wyciągnięty tekst:[/bold]")
+        console.print(result.extracted_text[:2000])
+
+    if output:
+        out_path = Path(output)
+        out_path.write_text(
+            json.dumps(
+                {
+                    "task": result.task,
+                    "success": result.success,
+                    "summary": result.summary,
+                    "final_url": result.final_url,
+                    "steps": [
+                        {"step": s.step, "action": s.action, "params": s.params,
+                         "success": s.success, "error": s.error}
+                        for s in result.steps
+                    ],
+                    "extracted_text": result.extracted_text,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        console.print(f"\n[green]Wynik zapisany:[/green] {output}")
+
+
+@app.command()
 def version():
     """
     Wyświetl wersję agenta.
@@ -430,7 +539,6 @@ def arena(
         ollama-agent arena
         ollama-agent arena "Build a REST API" --task code --thinking structured_reasoning
     """
-    # src/ is a sibling of agent/ — add project root to path so src.arena is importable
     _project_root = Path(__file__).resolve().parent.parent
     if str(_project_root) not in sys.path:
         sys.path.insert(0, str(_project_root))
@@ -444,7 +552,6 @@ def arena(
     arena_engine = Arena()
 
     if question:
-        # Non-interactive single-shot mode
         result = arena_engine.run_round(
             question=question,
             task_mode=task_mode,
@@ -464,7 +571,6 @@ def arena(
         if result.zip_path:
             console.print(f"[green]ZIP:[/green] {result.zip_path}")
     else:
-        # Delegate to the interactive arena CLI
         from src.main import main as arena_main
         arena_main()
 
