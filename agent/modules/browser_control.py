@@ -129,7 +129,7 @@ class BrowserControlModule:
         """Uruchom przeglądarkę i klienta Ollamy."""
         from playwright.async_api import async_playwright
 
-        self._ollama = await get_ollama()
+        self._ollama = get_ollama()
         self._playwright = await async_playwright().start()
         self._browser = await self._playwright.chromium.launch(
             headless=self.headless,
@@ -253,11 +253,11 @@ class BrowserControlModule:
         )
 
         try:
-            response = await self._ollama.generate(
-                prompt=user_message,
-                model=self.model,
-                system=_SYSTEM_PROMPT,
+            response = await self._ollama.chat(
+                message=user_message,
                 images=[screenshot_b64],
+                system_prompt=_SYSTEM_PROMPT,
+                use_history=False,
             )
             return self._parse_command(response)
         except Exception as exc:
