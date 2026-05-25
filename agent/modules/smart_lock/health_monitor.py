@@ -157,7 +157,14 @@ class HealthMonitor:
 
     async def _poll_watch(self) -> None:
         if not self._connector.is_connected:
-            await self._connector.connect()
+            reconnected = await self._connector.connect()
+            self._watch_status.connected = reconnected
+            if not reconnected:
+                self._emit_event(
+                    SecurityEvent.WATCH_DISCONNECTED,
+                    "Nie można połączyć się z zegarkiem - brak danych zdrowotnych",
+                    severity=2,
+                )
             return
 
         hr = await self._connector.read_heart_rate()

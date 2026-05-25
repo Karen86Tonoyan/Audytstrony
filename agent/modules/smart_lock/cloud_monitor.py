@@ -19,10 +19,11 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import json
+import hmac
 import logging
+import secrets
 import time
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Set
 
 from .models import (
     CloudStatus,
@@ -37,6 +38,8 @@ HEARTBEAT_INTERVAL_SEC = 30
 CLOUD_TIMEOUT_SEC = 10
 MAX_INTRUSION_BEFORE_ALERT = 3
 RECONNECT_BACKOFF_SEC = [5, 10, 30, 60]  # Backoff przy rozłączeniu
+USED_TOKEN_TTL_SEC = 300              # Jak długo pamiętamy zużyte tokeny (5 min)
+NONCE_VALIDITY_SEC = 60              # Czas życia nonce heartbeatu
 
 
 class CloudMonitor:
@@ -71,6 +74,12 @@ class CloudMonitor:
         self._task: Optional[asyncio.Task] = None
         self._reconnect_attempt = 0
         self._event_queue: List[SecurityEventRecord] = []
+
+        # Ochrona przed atakami replay
+        # token_hash → czas_użycia; odrzucamy tokeny już raz przyjęte
+        self._used_open_tokens: Dict[str, float] = {}
+        # Nonce wysłany w ostatnim heartbeacie; serwer musi go echo'wać
+        self._current_heartbeat_nonce: Optional[str] = None
 
     # --- API publiczne ---
 
@@ -119,9 +128,24 @@ class CloudMonitor:
 
         # Tryb online - chmura musi zatwierdzić
         logger.info("[CloudMonitor] ONLINE: Żądanie zgody chmury na otwarcie sejfu...")
+
+        # Ochrona przed replay: sprawdź czy token był już użyty
+        self._purge_expired_used_tokens()
+        token_fingerprint = hashlib.sha256(requester_token.encode()).hexdigest()
+        if token_fingerprint in self._used_open_tokens:
+            logger.warning("[CloudMonitor] REPLAY ATTACK: Token był już użyty!")
+            self._emit_event(
+                SecurityEvent.INTRUSION_ATTEMPT,
+                "Odrzucono replay attack - token jednorazowy już wykorzystany",
+                severity=3,
+            )
+            return False
+
         approved = self._simulate_cloud_approval(requester_token)
         if approved:
-            logger.info("[CloudMonitor] Chmura zatwierdziła otwarcie sejfu.")
+            # Oznacz token jako zużyty - nie można go użyć ponownie
+            self._used_open_tokens[token_fingerprint] = time.time()
+            logger.info("[CloudMonitor] Chmura zatwierdziła otwarcie sejfu (token zużyty).")
         else:
             logger.warning("[CloudMonitor] Chmura ODMÓWIŁA otwarcia sejfu!")
             self._emit_event(
@@ -166,15 +190,39 @@ class CloudMonitor:
                 await self._handle_disconnect()
 
     async def _heartbeat(self) -> None:
-        """Wyślij heartbeat do chmury i sprawdź status."""
-        # Symulacja HTTP POST do cloud endpoint
-        # W produkcji: httpx.AsyncClient().post(...)
+        """
+        Wyślij heartbeat do chmury z nowym nonce.
+
+        Ochrona przed replay: każdy heartbeat zawiera jednorazowy nonce;
+        serwer musi go echo'wać w odpowiedzi, potwierdzając świeżość.
+        W produkcji: httpx.AsyncClient().post(url, json={nonce, device_id, ts})
+        i weryfikacja nonce w odpowiedzi przed ustawieniem connected=True.
+        """
+        # Wygeneruj nonce dla tego cyklu heartbeatu
+        nonce = secrets.token_hex(16)
+        self._current_heartbeat_nonce = nonce
+        sent_at = time.time()
+
         await asyncio.sleep(0.1)  # symulacja latency
+
+        # Produkcja: response = await client.post(..., json={"nonce": nonce, ...})
+        # Tu symulujemy poprawną odpowiedź serwera z echo nonce
+        server_echoed_nonce = nonce   # serwer zwraca nonce w odpowiedzi
+        server_ts = time.time()
+
+        # Weryfikacja: nonce musi się zgadzać i odpowiedź musi być świeża
+        nonce_valid = hmac.compare_digest(server_echoed_nonce, nonce)
+        response_fresh = (server_ts - sent_at) < NONCE_VALIDITY_SEC
+
+        if not nonce_valid or not response_fresh:
+            logger.warning("[CloudMonitor] Heartbeat odrzucony - nieprawidłowy nonce (replay?)!")
+            raise ConnectionError("Nonce mismatch - possible replay attack on heartbeat")
 
         was_connected = self._status.connected
         self._status.connected = True
-        self._status.last_ping = time.time()
-        self._status.latency_ms = 45  # symulacja
+        self._status.last_ping = server_ts
+        self._status.latency_ms = round((server_ts - sent_at) * 1000)
+        self._current_heartbeat_nonce = None  # nonce zużyty
 
         if not was_connected:
             self._on_connected()
@@ -279,6 +327,13 @@ class CloudMonitor:
         if self._safe_mode == SafeMode.EMERGENCY_LOCKED:
             return False
         return True
+
+    def _purge_expired_used_tokens(self) -> None:
+        """Usuń przeterminowane wpisy z rejestru zużytych tokenów."""
+        cutoff = time.time() - USED_TOKEN_TTL_SEC
+        self._used_open_tokens = {
+            fp: ts for fp, ts in self._used_open_tokens.items() if ts >= cutoff
+        }
 
     def _emit_event(self, event: SecurityEvent, details: str, severity: int = 1) -> None:
         record = SecurityEventRecord(

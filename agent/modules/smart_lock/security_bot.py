@@ -77,6 +77,7 @@ class SecurityBot:
         self._event_history: Deque[SecurityEventRecord] = deque(maxlen=200)
         self._action_log: List[BotAction] = []
         self._active_sessions: Dict[str, float] = {}  # token → expiry
+        self._revoked_tokens: set = set()              # unieważnione tokeny
 
         # Liczniki w oknie czasowym
         self._recent_auth_failures: Deque[float] = deque(maxlen=50)
@@ -151,15 +152,11 @@ class SecurityBot:
     def revoke_session(self, token: str) -> None:
         """Unieważnij sesję."""
         self._active_sessions.pop(token, None)
-        if not hasattr(self, "_revoked_tokens"):
-            self._revoked_tokens: set = set()
         self._revoked_tokens.add(token)
 
     def revoke_all_sessions(self, reason: str = "security") -> int:
         """Unieważnij wszystkie aktywne sesje (np. po rotacji klucza)."""
         count = len(self._active_sessions)
-        if not hasattr(self, "_revoked_tokens"):
-            self._revoked_tokens: set = set()
         self._revoked_tokens.update(self._active_sessions.keys())
         self._active_sessions.clear()
         logger.warning(f"[SecurityBot] Unieważniono {count} sesji - powód: {reason}")
@@ -320,12 +317,3 @@ class SecurityBot:
         if len(self._action_log) > 500:
             self._action_log = self._action_log[-500:]
 
-    @property
-    def _revoked_tokens(self) -> set:
-        if not hasattr(self, "_revoked_tokens_set"):
-            self._revoked_tokens_set: set = set()
-        return self._revoked_tokens_set
-
-    @_revoked_tokens.setter
-    def _revoked_tokens(self, value: set) -> None:
-        self._revoked_tokens_set = value

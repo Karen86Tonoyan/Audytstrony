@@ -19,8 +19,8 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import logging
-import os
 import secrets
 import time
 from typing import Callable, Dict, List, Optional
@@ -72,20 +72,25 @@ class KeyManager:
         """
         Wygeneruj token HMAC podpisany aktualnym kluczem.
 
-        Format: {payload_hex}.{timestamp}.{hmac_signature}
+        Format: {nonce}.{timestamp}.{hmac_signature}
+
+        Nonce zapewnia unikalność każdego tokenu - nawet przy tym samym
+        payload i zbliżonym czasie dwa tokeny nigdy nie będą identyczne,
+        co eliminuje możliwość ataku replay przez duplikację żądania.
         """
         self._check_auto_rotation()
         key = self._current_key
         timestamp = str(int(time.time()))
-        payload_str = str(sorted(payload.items()))
-        message = f"{payload_str}.{timestamp}.{key.key_id}"
+        nonce = secrets.token_hex(8)  # 8 bajtów = 16 znaków hex, unikalny per token
+        payload_str = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        message = f"{payload_str}.{timestamp}.{nonce}.{key.key_id}"
         signature = hmac.new(
             key.key_id.encode(),
             message.encode(),
             hashlib.sha256,
         ).hexdigest()
-        token = f"{hashlib.sha256(payload_str.encode()).hexdigest()[:16]}.{timestamp}.{signature}"
-        logger.debug(f"[KeyManager] Token wygenerowany (klucz v{key.version})")
+        token = f"{nonce}.{timestamp}.{signature}"
+        logger.debug(f"[KeyManager] Token wygenerowany (klucz v{key.version}, nonce={nonce})")
         return token
 
     def validate_token(self, token: str, payload: Dict) -> bool:
@@ -102,7 +107,7 @@ class KeyManager:
         if len(parts) != 3:
             return False
 
-        _, timestamp_str, signature = parts
+        nonce, timestamp_str, signature = parts
 
         # Sprawdź czas ważności
         try:
@@ -116,12 +121,12 @@ class KeyManager:
 
         # Sprawdź podpis względem aktualnego i poprzednich kluczy
         candidates = [self._current_key] + self._key_history
-        payload_str = str(sorted(payload.items()))
+        payload_str = json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
         for key in candidates:
             if key is None or not key.active:
                 continue
-            message = f"{payload_str}.{timestamp_str}.{key.key_id}"
+            message = f"{payload_str}.{timestamp_str}.{nonce}.{key.key_id}"
             expected = hmac.new(
                 key.key_id.encode(),
                 message.encode(),
