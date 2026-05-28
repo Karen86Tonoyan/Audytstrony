@@ -1,0 +1,25 @@
+{
+  "name": "code-assistant",
+  "version": "1.0.0",
+  "description": "AI-powered code generation and analysis assistant",
+  "author": "Karen86Tonoyan",
+  "capabilities": [
+    "code_generation",
+    "code_analysis",
+    "code_review",
+    "refactoring"
+  ],
+  "dependencies": [
+    "ollama>=0.1.0",
+    "tree-sitter>=0.20.0",
+    "pygments>=2.17.0"
+  ],
+  "config": {
+    "required": [],
+    "optional": [
+      "preferred_language",
+      "code_style",
+      "max_complexity"
+    ]
+  }
+}

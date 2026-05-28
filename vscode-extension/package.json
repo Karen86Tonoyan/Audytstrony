@@ -1,0 +1,171 @@
+{
+  "name": "ollama-agent",
+  "displayName": "Ollama Agent",
+  "description": "AI-powered code assistant using Ollama",
+  "version": "1.0.0",
+  "publisher": "Karen86Tonoyan",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "ollama",
+    "llama",
+    "code generation",
+    "code completion",
+    "assistant"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ollamaAgent.openChat",
+        "title": "Ollama Agent: Open Chat"
+      },
+      {
+        "command": "ollamaAgent.explainCode",
+        "title": "Ollama Agent: Explain Code"
+      },
+      {
+        "command": "ollamaAgent.refactorCode",
+        "title": "Ollama Agent: Refactor Code"
+      },
+      {
+        "command": "ollamaAgent.generateTests",
+        "title": "Ollama Agent: Generate Tests"
+      },
+      {
+        "command": "ollamaAgent.generateDocs",
+        "title": "Ollama Agent: Generate Documentation"
+      },
+      {
+        "command": "ollamaAgent.findBugs",
+        "title": "Ollama Agent: Find Bugs"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "ollamaAgent.openChat",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      },
+      {
+        "command": "ollamaAgent.explainCode",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "ollamaAgent.refactorCode",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "ollamaAgent.generateTests",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      },
+      {
+        "command": "ollamaAgent.generateDocs",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d"
+      }
+    ],
+    "configuration": {
+      "title": "Ollama Agent",
+      "properties": {
+        "ollamaAgent.host": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL"
+        },
+        "ollamaAgent.model": {
+          "type": "string",
+          "default": "llama3.2",
+          "description": "Default Ollama model"
+        },
+        "ollamaAgent.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Generation temperature"
+        },
+        "ollamaAgent.autoComplete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-completion"
+        },
+        "ollamaAgent.maxTokens": {
+          "type": "number",
+          "default": 2000,
+          "description": "Maximum tokens per request"
+        },
+        "ollamaAgent.contextLines": {
+          "type": "number",
+          "default": 50,
+          "description": "Lines of context for requests"
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "ollamaAgent.explainCode",
+          "when": "editorHasSelection",
+          "group": "ollama@1"
+        },
+        {
+          "command": "ollamaAgent.refactorCode",
+          "when": "editorHasSelection",
+          "group": "ollama@2"
+        },
+        {
+          "command": "ollamaAgent.generateTests",
+          "group": "ollama@3"
+        },
+        {
+          "command": "ollamaAgent.generateDocs",
+          "group": "ollama@4"
+        },
+        {
+          "command": "ollamaAgent.findBugs",
+          "when": "editorHasSelection",
+          "group": "ollama@5"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Karen86Tonoyan/Audytstrony.git"
+  },
+  "license": "MIT"
+}

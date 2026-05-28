@@ -1,0 +1,12 @@
+{
+  "model": "llama3.2",
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "top_k": 40,
+  "num_ctx": 4096,
+  "repeat_penalty": 1.1,
+  "system_prompt": "You are a helpful, knowledgeable AI assistant. Provide clear, accurate, and concise responses.",
+  "use_cases": ["general", "conversation", "analysis", "explanation"],
+  "priority": 1,
+  "description": "General purpose conversational model, excellent for chat and explanations"
+}

@@ -56,3 +56,36 @@ htmlcov/
 
 # Mypy
 .mypy_cache/
+
+# Node modules (for VS Code extension)
+node_modules/
+package-lock.json
+yarn.lock
+
+# VS Code extension build
+vscode-extension/out/
+vscode-extension/dist/
+*.vsix
+
+# Plugin caches
+ALFA-Plugins/**/__pycache__/
+ALFA-Plugins/**/*.pyc
+ollama-plugins/**/__pycache__/
+ollama-plugins/**/*.pyc
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Ollama models cache (optional)
+.ollama/
+
+# Screenshots and captures
+screenshots/
+captures/
+*.png
+*.jpg
+*.jpeg
+!docs/**/*.png
+!docs/**/*.jpg

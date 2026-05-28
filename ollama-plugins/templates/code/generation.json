@@ -1,0 +1,22 @@
+{
+  "name": "code-generation",
+  "description": "Generate code from natural language description",
+  "template": "Generate {language} code that {description}.\n\nRequirements:\n- Follow {style_guide} conventions\n- Include type hints and documentation\n- Handle errors appropriately\n- Write tests if applicable\n\nCode:",
+  "variables": ["language", "description", "style_guide"],
+  "defaults": {
+    "language": "Python",
+    "style_guide": "PEP 8"
+  },
+  "model": "codellama",
+  "temperature": 0.3,
+  "examples": [
+    {
+      "input": {
+        "language": "Python",
+        "description": "reads a JSON file and returns parsed data",
+        "style_guide": "PEP 8"
+      },
+      "output": "import json\nfrom pathlib import Path\nfrom typing import Any, Dict\n\ndef read_json_file(filepath: str) -> Dict[str, Any]:\n    \"\"\"Read and parse a JSON file.\n    \n    Args:\n        filepath: Path to the JSON file\n        \n    Returns:\n        Parsed JSON data as a dictionary\n        \n    Raises:\n        FileNotFoundError: If file doesn't exist\n        JSONDecodeError: If file contains invalid JSON\n    \"\"\"\n    path = Path(filepath)\n    \n    if not path.exists():\n        raise FileNotFoundError(f\"File not found: {filepath}\")\n        \n    with path.open('r', encoding='utf-8') as f:\n        return json.load(f)"
+    }
+  ]
+}
