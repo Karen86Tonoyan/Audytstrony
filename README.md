@@ -18,6 +18,7 @@ Oferujemy kompleksowe usługi z zakresu cyberbezpieczeństwa:
 - **MDR (Managed Detection and Response)** - zarządzane wykrywanie i reagowanie na zagrożenia
 - **Reagowanie na incydenty** - szybka reakcja i mitygacja zagrożeń
 - **Informatyka śledcza** - analiza incydentów i dowodów cyfrowych
+  ([badanie urządzeń Android](docs/forensics-android.md))
 - **EDR/XDR** - zaawansowana ochrona punktów końcowych
 
 ### Ochrona Infrastruktury
