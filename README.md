@@ -1,248 +1,67 @@
-# Ollama Agent - Pełnoprawny Agent AI
+# Ollama Agent / Audytstrony
 
-Kompleksowy agent AI oparty na Ollama z pełnymi możliwościami automatyzacji komputera.
+> **Experimental local Python agent with automation, audit, vision, voice and file-generation modules**
 
-## Możliwości
+Audytstrony contains a Python package called `agent` plus a small `src/`
+application. The modules cover local Ollama communication, screen and web
+inspection, automation, scheduling, file generation, voice and a separate
+`smart_lock` namespace. The components have distinct permissions and should be
+enabled only after review.
 
-### Widzenie (Vision)
-- Przechwytywanie ekranu (screenshots)
-- OCR - rozpoznawanie tekstu z obrazów
-- Analiza obrazów z AI (modele vision)
-- Detekcja elementów UI (przyciski, pola tekstowe)
-- Monitorowanie zmian na ekranie
+## Project structure
 
-### Głos (Voice)
-- Rozpoznawanie mowy (Speech-to-Text)
-- Synteza mowy (Text-to-Speech)
-- Wykrywanie słowa kluczowego (wake word)
-- Ciągłe nasłuchiwanie komend
-- Asystent głosowy
+```text
+agent/core/          agent loop, Ollama client and scheduler
+agent/modules/       automation, communication, vision, voice and web audit
+agent/modules/smart_lock/
+                     health, key, emergency and controller experiments
+agent/config/        settings
+config/roles.yaml    role configuration
+tests/               smart-lock test module
+```
 
-### Automatyzacja (Automation)
-- Sterowanie myszą (klikanie, przeciąganie)
-- Sterowanie klawiaturą (pisanie, skróty)
-- PowerShell / Bash
-- Zarządzanie oknami
-- Makra i sekwencje akcji
+## Requirements
 
-### Komunikacja (Communication)
-- Facebook Messenger
-- WhatsApp
-- Telegram
-- Twitter/X
-- Instagram
-- Facebook
+- Python 3.10+;
+- a local Ollama service and models for LLM-dependent flows;
+- optional OS tools and devices for OCR, browser automation, audio, social
+  integrations or smart-lock experiments.
 
-### Generowanie Plików (FileGenerator)
-- PDF (raporty, dokumenty)
-- Word (.docx)
-- Excel (.xlsx)
-- PowerPoint (.pptx)
-- HTML/CSS
-- Markdown
-- Kod źródłowy
-- JSON/YAML/XML
-
-### Audyty Bezpieczeństwa (WebAudit)
-- Skanowanie SSL/TLS
-- Analiza nagłówków bezpieczeństwa
-- Wykrywanie podatności
-- SEO audit
-- Generowanie raportów
-
-### Zarządzanie Programami (Programs)
-- Uruchamianie aplikacji
-- VS Code, Chrome, Office
-- Zarządzanie procesami
-- Integracja z IDE
-
-### Automatyzacja Zadań (Scheduler)
-- Harmonogramowanie zadań (cron)
-- Triggery czasowe i zdarzeniowe
-- Workflows
-- Automatyczne wykonywanie
-
-## Instalacja
+## Installation
 
 ```bash
-# Klonuj repozytorium
-git clone https://github.com/Karen86Tonoyan/Audytstrony.git
-cd Audytstrony
-
-# Utwórz środowisko wirtualne
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# lub: venv\Scripts\activate  # Windows
-
-# Zainstaluj zależności
-pip install -r requirements.txt
-
-# Lub zainstaluj jako pakiet
-pip install -e .
-
-# Skopiuj i uzupełnij konfigurację
-cp .env.example .env
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+python -m pip install -e .
 ```
 
-## Wymagania
-
-- Python 3.10+
-- Ollama (uruchomione lokalnie)
-- Tesseract OCR (dla funkcji OCR)
-- Chrome/Chromium (dla automatyzacji web)
-
-### Instalacja Ollama
+The project declares the `ollama-agent` console command:
 
 ```bash
-# Linux/Mac
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Uruchom serwer
-ollama serve
-
-# Pobierz model
-ollama pull llama3.2
-ollama pull llava  # dla vision
+ollama-agent
 ```
 
-## Użycie
+`requirements.txt` lists a broader optional tool set. Install it only when the
+corresponding feature is required.
 
-### CLI
+## Configuration
 
-```bash
-# Interaktywny chat
-python main.py
+Copy `.env.example` to a local `.env` and set only the integrations in use.
+The example includes Ollama, OCR and voice settings, followed by optional
+Telegram, social-media and Smart Lock placeholders. Keep tokens, passwords,
+device identifiers and endpoints out of version control.
 
-# Tryb głosowy
-python main.py --voice
+## Safety and status
 
-# Audyt strony
-python main.py audit https://example.com
+Screen capture, keyboard/mouse automation, browser automation and smart-device
+modules can affect personal data, accounts or physical equipment. Run them
+only with permission, use test targets first and keep a human in control.
+This is a beta-stage prototype, not a certified audit or access-control
+system.
 
-# Screenshot
-python main.py screenshot --analyze
+## Licence
 
-# Lista modeli
-python main.py models
-```
-
-### Jako biblioteka Python
-
-```python
-import asyncio
-from agent import create_agent
-
-async def main():
-    # Utwórz i zainicjalizuj agenta
-    agent = await create_agent()
-
-    # Rozmowa
-    response = await agent.chat("Zrób screenshot ekranu")
-    print(response)
-
-    # Audyt strony
-    result = await agent.web_audit.full_audit("https://example.com")
-    print(f"Wynik: {result.score}/100")
-
-    # Otwórz VS Code
-    await agent.programs.open_vscode("/path/to/project")
-
-    # Zamknij
-    await agent.shutdown()
-
-asyncio.run(main())
-```
-
-## Komendy przykładowe
-
-```
-# Vision
-- "Zrób screenshot ekranu"
-- "Co widzisz na ekranie?"
-- "Znajdź tekst 'Login' na ekranie"
-
-# Automatyzacja
-- "Otwórz VS Code"
-- "Wpisz 'Hello World'"
-- "Kliknij na przycisk Start"
-
-# Audyt
-- "Sprawdź stronę google.com"
-- "Zrób audyt bezpieczeństwa example.com"
-
-# Pliki
-- "Wygeneruj raport PDF"
-- "Stwórz arkusz Excel z danymi"
-
-# Harmonogram
-- "Przypomnij mi codziennie o 9:00"
-- "Zaplanuj audyt co godzinę"
-```
-
-## Struktura projektu
-
-```
-Audytstrony/
-├── agent/
-│   ├── __init__.py
-│   ├── cli.py              # Interfejs CLI
-│   ├── core/
-│   │   ├── agent.py        # Główny agent
-│   │   ├── ollama_client.py # Klient Ollama API
-│   │   └── scheduler.py    # Harmonogram zadań
-│   ├── modules/
-│   │   ├── vision.py       # Widzenie
-│   │   ├── voice.py        # Głos
-│   │   ├── automation.py   # Automatyzacja
-│   │   ├── communication.py # Komunikacja
-│   │   ├── file_generator.py # Generowanie plików
-│   │   ├── web_audit.py    # Audyty stron
-│   │   └── programs.py     # Zarządzanie programami
-│   └── config/
-│       └── settings.py     # Konfiguracja
-├── data/                   # Dane robocze
-├── tests/                  # Testy
-├── main.py                 # Punkt wejścia
-├── requirements.txt        # Zależności
-├── pyproject.toml          # Konfiguracja pakietu
-└── .env.example            # Przykładowa konfiguracja
-```
-
-## Konfiguracja
-
-Skopiuj `.env.example` do `.env` i uzupełnij:
-
-```env
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=llama3.2
-OLLAMA_VISION_MODEL=llava
-
-# Opcjonalne - dla social media
-TELEGRAM_BOT_TOKEN=your_token
-TWITTER_API_KEY=your_key
-```
-
-## Licencja
-
-MIT
-
-## Zakres Usług Bezpieczeństwa
-
-Dodatkowo oferujemy kompleksowe usługi z zakresu cyberbezpieczeństwa:
-
-### Testowanie i Audyty
-- Pen-testy aplikacji, sieci i infrastruktury
-- Audyty bezpieczeństwa systemów IT
-- Red Team / Blue Team
-- Bezpieczeństwo aplikacji (SAST/DAST)
-
-### Monitoring i Reagowanie
-- SOC - całodobowy monitoring
-- MDR - zarządzane wykrywanie zagrożeń
-- Reagowanie na incydenty
-- Informatyka śledcza
-
-### Compliance
-- ISO 27001
-- RODO/GDPR
-- PCI DSS
+`pyproject.toml` declares an MIT licence, but the repository has no root
+`LICENSE` file. Confirm the intended licensing with the maintainer before
+redistribution.
